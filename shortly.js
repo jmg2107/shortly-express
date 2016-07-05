@@ -26,10 +26,8 @@ app.use(session({secret: 'cookie', resave: true}));
 
 function checkUser(req, res, next) {
   if (req.session.username) {
-    console.log("got inside of if checkUser");
     next();
   } else {
-    console.log("got inside of redirect")
     //req.session.error = 'Access denied!';
     res.redirect('/login');
     //res.send({redirect: '/login'}).end();
@@ -51,7 +49,6 @@ function(req, res) {
 
 app.get('/links',
 function(req, res) {
-  console.log("in Links, req.session.username " + req.session.username);
   checkUser(req, res, function() {
       Links.reset().fetch().then(function(links) {
       res.send(200, links.models);
@@ -98,6 +95,11 @@ function(req, res) {
 /************************************************************/
 
 // signup route
+app.get('/signup',
+function(req, res) {
+  res.render('signup');
+});
+
 app.post('/signup',
 function(req, res) {
   new User({username: req.body.username}).fetch().then(function(found) {
@@ -130,22 +132,20 @@ function(req, res) {
 // login route
 app.get('/login',
 function(req, res) {
-  console.log("in Login, req.session.username " + req.session.username);
   res.render('login');
 });
 
 
 app.post('/login',
 function(req, res) {
-  console.log(req.body.username);
+  console.log('username: ' + req.body.username);
   new User({username: req.body.username}).fetch().then(function(found) {
     if (found) {
-      //req.session.regenerate(function(){
-      req.session.username = req.body.username;
-      //});
-      console.log("found username");
-      res.redirect('/');
-      //res.send(201);
+      req.session.regenerate(function(){
+        req.session.username = req.body.username;
+        console.log("found username");
+        res.redirect('/');
+      });
     } else {
       console.log("username not found");
       res.redirect('/login');
@@ -153,6 +153,17 @@ function(req, res) {
   });
 });
 
+app.get('/logout',
+function(req, res) {
+  req.session.destroy(function(err) {
+    console.log("destroying session");
+    if (err) {
+      console.log('getting error');
+    } else {
+      console.log('not getting error');
+    }
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
