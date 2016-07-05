@@ -31,16 +31,14 @@ function checkUser(req, res, next) {
   } else {
     console.log("got inside of redirect")
     //req.session.error = 'Access denied!';
-    //res.redirect('/login');
-    res.send({redirect: '/login'}).end();
+    res.redirect('/login');
+    //res.send({redirect: '/login'}).end();
   }
 }
 
-app.get('/',
+app.get('/', checkUser,
 function(req, res) {
-  checkUser(req, res, function() {
     res.render('index');
-  });
 });
 
 app.get('/create',
@@ -130,16 +128,26 @@ function(req, res) {
   // adding user to users table
 
 // login route
+app.get('/login',
+function(req, res) {
+  console.log("in Login, req.session.username " + req.session.username);
+  res.render('login');
+});
+
+
 app.post('/login',
 function(req, res) {
+  console.log(req.body.username);
   new User({username: req.body.username}).fetch().then(function(found) {
     if (found) {
       //req.session.regenerate(function(){
-        req.session.username = req.body.username;
+      req.session.username = req.body.username;
       //});
+      console.log("found username");
       res.redirect('/');
       //res.send(201);
     } else {
+      console.log("username not found");
       res.redirect('/login');
     }
   });

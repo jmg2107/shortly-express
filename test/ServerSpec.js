@@ -210,7 +210,7 @@ describe('', function() {
 
   }); // 'Link creation'
 
-  xdescribe('Privileged Access:', function(){
+  describe('Privileged Access:', function(){
 
     request('http://127.0.0.1:4568/logout', function(error, res, body) {});
 
