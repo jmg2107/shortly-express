@@ -10,6 +10,7 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var session = require('express-session');
 
 var app = express();
 
@@ -21,26 +22,46 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({secret: 'cookie', resave: true}));
 
+function checkUser(req, res, next) {
+  if (req.session.username) {
+    console.log("got inside of if checkUser");
+    next();
+  } else {
+    console.log("got inside of redirect")
+    //req.session.error = 'Access denied!';
+    //res.redirect('/login');
+    res.send({redirect: '/login'}).end();
+  }
+}
 
-app.get('/', 
+app.get('/',
 function(req, res) {
-  res.render('index');
-});
-
-app.get('/create', 
-function(req, res) {
-  res.render('index');
-});
-
-app.get('/links', 
-function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
+  checkUser(req, res, function() {
+    res.render('index');
   });
 });
 
-app.post('/links', 
+app.get('/create',
+function(req, res) {
+  checkUser(req, res, function(){
+    res.render('index');
+  });
+  //res.rennder('index');
+});
+
+app.get('/links',
+function(req, res) {
+  console.log("in Links, req.session.username " + req.session.username);
+  checkUser(req, res, function() {
+      Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  });
+});
+
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -78,6 +99,51 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+// signup route
+app.post('/signup',
+function(req, res) {
+  new User({username: req.body.username}).fetch().then(function(found) {
+    if (found) {
+      res.redirect('/login');
+    } else {
+      var user = new User({
+        username: req.body.username,
+        password: req.body.password
+      });
+//We need to trigger the initialize listener for USERS in order
+//to hash the password and save the hashed password
+      user.save().then(function(newUser) {
+        newUser.fetch().then(function(data) {
+          console.log(data);
+        });
+        Users.add(newUser);
+        //req.session.regenerate(function(){
+          req.session.username = req.body.username;
+        //});
+        res.redirect('/');
+       // res.send(201);
+      });
+    }
+  });
+});
+  // POST request
+  // adding user to users table
+
+// login route
+app.post('/login',
+function(req, res) {
+  new User({username: req.body.username}).fetch().then(function(found) {
+    if (found) {
+      //req.session.regenerate(function(){
+        req.session.username = req.body.username;
+      //});
+      res.redirect('/');
+      //res.send(201);
+    } else {
+      res.redirect('/login');
+    }
+  });
+});
 
 
 /************************************************************/
