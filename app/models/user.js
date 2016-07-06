@@ -8,14 +8,11 @@ var User = db.Model.extend({
 
   hashPassword: function() {
     //promisify bcrypt function
-    console.log("this is " + this);
     var cryptAsync = Promise.promisify(bcrypt.hash);
       // bind to model context
     // invoke promisified bcrypt
     return cryptAsync(this.get("password"), null, null).bind(this)
       .then(function(hash){
-        console.log ("model.get.password: " + this.get("password"));
-        console.log('hash: ' + hash);
         this.set({password: hash});
     // then reset user password to hashed password
       })

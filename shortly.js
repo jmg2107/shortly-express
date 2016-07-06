@@ -29,9 +29,7 @@ function checkUser(req, res, next) {
   if (req.session.username) {
     next();
   } else {
-    //req.session.error = 'Access denied!';
     res.redirect('/login');
-    //res.send({redirect: '/login'}).end();
   }
 }
 
@@ -62,7 +60,6 @@ function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
-    console.log('Not a valid url: ', uri);
     return res.send(404);
   }
 
@@ -111,53 +108,33 @@ function(req, res) {
         username: req.body.username,
         password: req.body.password
       });
-//We need to trigger the initialize listener for USERS in order
-//to hash the password and save the hashed password
       user.save().then(function(newUser) {
         newUser.fetch().then(function(data) {
-          console.log(data);
-        });
-        Users.add(newUser);
-        //req.session.regenerate(function(){
+          Users.add(newUser);
           req.session.username = req.body.username;
-        //});
-        res.redirect('/');
-       // res.send(201);
+          res.redirect('/');
+        });
       });
     }
   });
 });
-  // POST request
-  // adding user to users table
 
-// login route
 app.get('/login',
 function(req, res) {
   res.render('login');
 });
 
-// Load hash from your password DB.
-// bcrypt.compare(myPlaintextPassword, hash, function(err, res) {
-//     // res == true
-// });
 app.post('/login',
 function(req, res) {
-  console.log('username: ' + req.body.username);
   new User({username: req.body.username}).fetch().then(function(found) {
     if (found) {
-      console.log("object's password is: ", found.get("password"));
-      //match password with hash
       bcrypt.compare(req.body.password, found.get("password"), function(err, matched){
-        console.log(matched);
         if(err){
-        //else redirect to login
           return res.redirect('/login');
         }
-        //if true, regenerate
         if(matched){
           req.session.regenerate(function(){
             req.session.username = req.body.username;
-            console.log("found username");
             return res.redirect('/');
           });
         } else {
@@ -174,11 +151,9 @@ function(req, res) {
 app.get('/logout',
 function(req, res) {
   req.session.destroy(function(err) {
-    console.log("destroying session");
     if (err) {
       console.log('getting error');
     } else {
-      console.log('not getting error');
       res.redirect('/login');
     }
   });
